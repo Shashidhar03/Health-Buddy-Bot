@@ -74,7 +74,7 @@ function App() {
 
             setMessages((prevMessages) => [
                 ...prevMessages,
-                { text: 'What is your age?', sender: 'bot' },
+                { text:'Hello '+userInfo.name+ ', What is your age?', sender: 'bot' },
             ]);
             setStep(2);
         } 
@@ -85,6 +85,10 @@ function App() {
                 ...prevMessages,
                 { text: 'What is your gender?', sender: 'bot' },
             ]);
+
+            //call to backend to send userinfo data
+            // in response mongodb id wii be sent to frontend
+            // store id in localstorage
             setStep(3);
         } 
         else if (step === 3) 
@@ -92,7 +96,7 @@ function App() {
             setUserInfo((prevInfo) => ({ ...prevInfo, gender: message.text }));
             setMessages((prevMessages) => [
                 ...prevMessages,
-                { text: 'Enter five symptoms, separated by commas.', sender: 'bot' },
+                { text: 'What problems are you facing?', sender: 'bot' },
             ]);
             setStep(4);
         } 
@@ -177,7 +181,10 @@ function App() {
 
       function handleDoctorSelection(doctor) {
         setSelectedDoctor(doctor);
+    
+        // here go through all the slots(which is response from backend )and create json {slots.date , slots.time} and add in slots
         const slots = doctor.availableDates.map((date) => `${date} 10:00 AM`);
+
         setAvailableSlots(slots);
         setMessages((prevMessages) => [
           ...prevMessages,
@@ -191,6 +198,8 @@ function App() {
           ...prevMessages,
           { text: `You selected ${slot} for Dr. ${selectedDoctor.name}. Slot is booked.`, sender: 'bot' },
         ]);
+        //call to backend to block selected slot in backend
+        // data to be sent to backend is selectedDoctor.id, slot.time, and id(id which is stored in localstorage at line 91)
         setAvailableSlots([]);
         setStep(7);
       }
