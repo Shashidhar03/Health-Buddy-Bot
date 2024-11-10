@@ -14,6 +14,7 @@ function App() {
   // User info
   const [userInfo, setUserInfo] = useState({ name: '', age: '', gender: '' });
   const [symptoms, setSymptoms] = useState([]);
+  const [disease,setDisease] = useState('');
   const [step, setStep] = useState(1);
 
   //console.log(userInfo);
@@ -97,7 +98,10 @@ function App() {
             // in response mongodb id wii be sent to frontend
             // store id in localstorage
             setStep(3);
+
+            
         } 
+        
         else if (step === 3) 
         {
             await sleep(2000);
@@ -107,20 +111,71 @@ function App() {
                 { text: 'What problems are you facing?', sender: 'bot' },
             ]);
             setStep(4);
+            
         } 
         else if (step === 4) 
         {
             await sleep(2000);
-            const symptomsArray = message.text.split(',').map(symptom => symptom.trim());
+            //const symptomsArray = message.text.split(',').map(symptom => symptom.trim());
+           console.log(message.text);
+           const strobj = {
+            "symtext":message.text
+           }
+            // const symptomsArray = message.text.split(',').map(symptom => symptom.trim());
+            const sent = await fetch('http://localhost:5000/nlp',{
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify(strobj),
+            })
+            const symptomsArray = await sent.json();
+
             if (symptomsArray.length === 5) {
                 setSymptoms(symptomsArray);
                 setMessages((prevMessages) => [
                 ...prevMessages,
-                { text: 'Thank you! Your information has been saved.', sender: 'bot' },
-                { text: 'Would you like to book an appointment?', sender: 'bot' }
+
+                { text: `Thank You`, sender: 'bot' },
                 ]);
-                setStep(5); // End of sequence, we can data here to backend as symptoms array
-            }
+                 // End of sequence, we can data here to backend as symptoms array
+
+            console.log({userInfo,symptomsArray});
+             
+      
+            
+              try {
+                const response = await fetch('http://localhost:5000/api/patients', {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json',
+                  },
+                  body: JSON.stringify({userInfo,symptomsArray}),
+                });
+                
+          
+                const data = await response.json();
+                console.log("12354");
+                console.log(data);
+                setDisease((data) => data);
+                console.log(disease);
+                setMessages((prevMessages) => [
+                  ...prevMessages,
+                  { text: data, sender: 'bot' },
+                  ]);
+
+                  setStep(5);
+
+                if (response.ok) {
+                  console.log('Data sent successfully:', data);
+                } else {
+                  console.error('Failed to send data:', data.error);
+                }
+              } catch (error) {
+                console.error('Error sending data:', error);
+              }
+            
+            } 
             else
             {
                 setMessages((prevMessages) => [
@@ -140,17 +195,24 @@ function App() {
         }
         else
         {
-            await sleep(2000);
             setMessages((prevMessages) => [
-                ...prevMessages,
-                { text: 'for any query about other disease, enter 5 more symptoms else close the chat', sender: 'bot' },
+              ...prevMessages,
+              { text: 'for any query about other disease, enter 5 more symptoms else close the chat', sender: 'bot' },
             ]);
             setStep(4);
         }
-
+        console.log(message);
         // Clear input and stop loading
         setMessage({ text: '', sender: '' });
-    }
+      }        
+      
+      
+
+        
+
+        
+    
+    
 
     function handleAppointmentResponse(response) {
         if (response === 'yes') {
