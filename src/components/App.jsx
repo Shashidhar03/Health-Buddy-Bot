@@ -14,7 +14,16 @@ function App() {
   const [step, setStep] = useState(1);
 
   //console.log(userInfo);
-    console.log(symptoms);
+  //console.log(symptoms);
+
+  //Doctors info
+  const [doctors, setDoctors] = useState([]);
+  const [selectedDoctor, setSelectedDoctor] = useState({
+    id: null,
+    name: '',
+    availableDates: []
+  });
+  const [availableSlots, setAvailableSlots] = useState([]);
 
   const messagesEndRef = useRef(null);
 
@@ -66,7 +75,7 @@ function App() {
 
             setMessages((prevMessages) => [
                 ...prevMessages,
-                { text: 'What is your age?', sender: 'bot' },
+                { text:'Hello '+userInfo.name+ ', What is your age?', sender: 'bot' },
             ]);
             setStep(2);
         } 
@@ -77,6 +86,10 @@ function App() {
                 ...prevMessages,
                 { text: 'What is your gender?', sender: 'bot' },
             ]);
+
+            //call to backend to send userinfo data
+            // in response mongodb id wii be sent to frontend
+            // store id in localstorage
             setStep(3);
 
             
@@ -87,7 +100,7 @@ function App() {
             setUserInfo((prevInfo) => ({ ...prevInfo, gender: message.text }));
             setMessages((prevMessages) => [
                 ...prevMessages,
-                { text: 'Enter five symptoms, separated by commas.', sender: 'bot' },
+                { text: 'What problems are you facing?', sender: 'bot' },
             ]);
             setStep(4);
             
@@ -112,6 +125,7 @@ function App() {
                 setSymptoms(symptomsArray);
                 setMessages((prevMessages) => [
                 ...prevMessages,
+
                 { text: `Thank You`, sender: 'bot' },
                 ]);
                  // End of sequence, we can data here to backend as symptoms array
@@ -152,6 +166,13 @@ function App() {
               }
             
             } 
+
+                { text: 'Thank you! Your information has been saved.', sender: 'bot' },
+                { text: 'Would you like to book an appointment?', sender: 'bot' }
+                ]);
+                setStep(5); // End of sequence, we can data here to backend as symptoms array
+            }
+
             else
             {
                 setMessages((prevMessages) => [
@@ -160,6 +181,15 @@ function App() {
                 ]);
 
             }
+        }
+        else if (step === 6 && selectedDoctor) 
+        {
+            setMessages((prevMessages) => [
+                ...prevMessages,
+                { text: `Your slot with Dr. ${selectedDoctor.name} has been booked.`, sender: 'bot' },
+                { text: 'Thank you for booking the slot.', sender: 'bot' }
+            ]);
+            setStep(7);
         }
         else
         {
@@ -177,6 +207,68 @@ function App() {
         
     }
     
+
+    function handleAppointmentResponse(response) {
+        if (response === 'yes') {
+            // here we can fetch doctors from backend and set in doctors data
+        //   fetchDoctors();
+          const doctorsData = [
+            { id: 1, name: 'Dr. Smith', availableDates: ['2024-11-12', '2024-11-13'] },
+            { id: 2, name: 'Dr. Johnson', availableDates: ['2024-11-14', '2024-11-15'] },
+          ];
+          setDoctors(doctorsData);
+          setMessages((prevMessages) => [
+            ...prevMessages,
+            { text: 'Here are the available doctors:', sender: 'bot' },
+          ]);
+          setStep(6);
+
+        } else {
+          setMessages((prevMessages) => [
+            ...prevMessages,
+            { text: 'Okay, thankyou', sender: 'bot' },
+          ]);
+          setStep(7);
+        }
+      }
+
+    //   function fetchDoctors() {
+    //     const doctorsData = [
+    //       { id: 1, name: 'Dr. Smith', availableDates: ['2024-11-12', '2024-11-13'] },
+    //       { id: 2, name: 'Dr. Johnson', availableDates: ['2024-11-14', '2024-11-15'] },
+    //     ];
+    //     setDoctors(doctorsData);
+    //     setMessages((prevMessages) => [
+    //       ...prevMessages,
+    //       { text: 'Here are the available doctors:', sender: 'bot' },
+    //     ]);
+    //     setStep(6);
+    //   }
+
+      function handleDoctorSelection(doctor) {
+        setSelectedDoctor(doctor);
+    
+        // here go through all the slots(which is response from backend )and create json {slots.date , slots.time} and add in slots
+        const slots = doctor.availableDates.map((date) => `${date} 10:00 AM`);
+
+        setAvailableSlots(slots);
+        setMessages((prevMessages) => [
+          ...prevMessages,
+          { text: `Select a time slot for Dr. ${doctor.name}:`, sender: 'bot' },
+        ]);
+        setStep(6.5);
+      }
+
+      function handleSlotSelection(slot) {
+        setMessages((prevMessages) => [
+          ...prevMessages,
+          { text: `You selected ${slot} for Dr. ${selectedDoctor.name}. Slot is booked.`, sender: 'bot' },
+        ]);
+        //call to backend to block selected slot in backend
+        // data to be sent to backend is selectedDoctor.id, slot.time, and id(id which is stored in localstorage at line 91)
+        setAvailableSlots([]);
+        setStep(7);
+      }
 
   return (
     <div className="relative flex items-center justify-center min-h-screen p-4 bg-gradient-to-br from-teal-400 via-blue-400 to-purple-500 overflow-hidden">
@@ -229,6 +321,51 @@ function App() {
 
             )
         }
+
+        {step === 5 && (
+            <div className="flex justify-around p-4">
+              <button
+                onClick={() => handleAppointmentResponse('yes')}
+                className="px-4 py-2 bg-green-500 text-white rounded-lg"
+              >
+                Yes
+              </button>
+              <button
+                onClick={() => handleAppointmentResponse('no')}
+                className="px-4 py-2 bg-red-500 text-white rounded-lg"
+              >
+                No
+              </button>
+            </div>
+          )}
+  
+          {step === 6 && (
+            <div className="p-4">
+              {doctors.map((doctor) => (
+                <button
+                  key={doctor.id}
+                  onClick={() => handleDoctorSelection(doctor)}
+                  className="w-full mb-2 px-4 py-2 bg-blue-500 text-white rounded-lg"
+                >
+                  {doctor.name}
+                </button>
+              ))}
+            </div>
+          )}
+  
+          {step === 6.5 && (
+            <div className="p-4">
+              {availableSlots.map((slot, index) => (
+                <button
+                  key={index}
+                  onClick={() => handleSlotSelection(slot)}
+                  className="w-full mb-2 px-4 py-2 bg-purple-500 text-white rounded-lg"
+                >
+                  {slot}
+                </button>
+              ))}
+            </div>
+          )}
            
       </div>
     </div>
