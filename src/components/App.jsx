@@ -166,13 +166,6 @@ function App() {
               }
             
             } 
-
-                { text: 'Thank you! Your information has been saved.', sender: 'bot' },
-                { text: 'Would you like to book an appointment?', sender: 'bot' }
-                ]);
-                setStep(5); // End of sequence, we can data here to backend as symptoms array
-            }
-
             else
             {
                 setMessages((prevMessages) => [
@@ -181,31 +174,34 @@ function App() {
                 ]);
 
             }
-        }
-        else if (step === 6 && selectedDoctor) 
-        {
-            setMessages((prevMessages) => [
-                ...prevMessages,
-                { text: `Your slot with Dr. ${selectedDoctor.name} has been booked.`, sender: 'bot' },
-                { text: 'Thank you for booking the slot.', sender: 'bot' }
-            ]);
-            setStep(7);
-        }
-        else
-        {
-            setMessages((prevMessages) => [
-                ...prevMessages,
-                { text: 'for any query about other disease, enter 5 more symptoms else close the chat', sender: 'bot' },
-            ]);
-            setStep(4);
-        }
+            }
 
-        console.log(message);
-        // Clear input and stop loading
-        setMessage({ text: '', sender: '' });
+            else if (step === 6 && selectedDoctor) 
+              {
+                  setMessages((prevMessages) => [
+                      ...prevMessages,
+                      { text: `Your slot with Dr. ${selectedDoctor.name} has been booked.`, sender: 'bot' },
+                      { text: 'Thank you for booking the slot.', sender: 'bot' }
+                  ]);
+                  setStep(7);
+              }
+              else
+              {
+                  setMessages((prevMessages) => [
+                      ...prevMessages,
+                      { text: 'for any query about other disease, enter 5 more symptoms else close the chat', sender: 'bot' },
+                  ]);
+                  setStep(4);
+              }
+      
+              console.log(message);
+              // Clear input and stop loading
+              setMessage({ text: '', sender: '' });
+    }
+        
 
         
-    }
+    
     
 
     function handleAppointmentResponse(response) {
