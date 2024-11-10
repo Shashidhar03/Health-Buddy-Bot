@@ -1,12 +1,16 @@
 import React, { useState, useRef, useEffect } from 'react';
+import recording from "../assets/record.gif"
 
 function App() {
     //messages info
   const [message, setMessage] = useState({ text: '', sender: '' });
   const [messages, setMessages] = useState([]);
-
+  const [isListening, setIsListening] = useState(false);
   const [clickHey, setClickHey] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
 
+  let recognition;
+  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
   // User info
   const [userInfo, setUserInfo] = useState({ name: '', age: '', gender: '' });
   const [symptoms, setSymptoms] = useState([]);
@@ -58,7 +62,8 @@ function App() {
         }, 1000);
   }
 
-    function handleSubmit(event) 
+    const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+    async function handleSubmit(event) 
     {
         event.preventDefault();
 
@@ -70,6 +75,7 @@ function App() {
         // Process user input based on the current step
         if (step === 1)
         {
+            await sleep(2000);
             setUserInfo((prevInfo) => ({ ...prevInfo, name: message.text }));
 
             setMessages((prevMessages) => [
@@ -80,6 +86,7 @@ function App() {
         } 
         else if (step === 2) 
         {
+            await sleep(2000);
             setUserInfo((prevInfo) => ({ ...prevInfo, age: message.text }));
             setMessages((prevMessages) => [
                 ...prevMessages,
@@ -93,6 +100,7 @@ function App() {
         } 
         else if (step === 3) 
         {
+            await sleep(2000);
             setUserInfo((prevInfo) => ({ ...prevInfo, gender: message.text }));
             setMessages((prevMessages) => [
                 ...prevMessages,
@@ -102,6 +110,7 @@ function App() {
         } 
         else if (step === 4) 
         {
+            await sleep(2000);
             const symptomsArray = message.text.split(',').map(symptom => symptom.trim());
             if (symptomsArray.length === 5) {
                 setSymptoms(symptomsArray);
@@ -131,6 +140,7 @@ function App() {
         }
         else
         {
+            await sleep(2000);
             setMessages((prevMessages) => [
                 ...prevMessages,
                 { text: 'for any query about other disease, enter 5 more symptoms else close the chat', sender: 'bot' },
@@ -203,6 +213,39 @@ function App() {
         setAvailableSlots([]);
         setStep(7);
       }
+    //////////////////////////////////////speech to text
+    if (SpeechRecognition) {
+      recognition = new SpeechRecognition();
+      recognition.continuous = false;
+      recognition.interimResults = true;
+      recognition.lang = 'en-US';
+
+      recognition.onstart = () => {
+          setIsProcessing(true); // Set processing to true when recognition starts
+      };
+
+      recognition.onresult = (event) => {
+          const transcript = Array.from(event.results)
+              .map(result => result[0].transcript)
+              .join('');
+          setMessage({ text: transcript, sender: 'user' });
+      };
+
+      recognition.onend = () => {
+          setIsProcessing(false);
+          setIsListening(false);
+      };
+  }
+
+  const toggleListening = () => {
+      if (isListening) {
+          recognition.stop();
+      } else {
+          recognition.start();
+      }
+      setIsListening(!isListening);
+  };
+
 
   return (
     <div className="relative flex items-center justify-center min-h-screen p-4 bg-gradient-to-br from-teal-400 via-blue-400 to-purple-500 overflow-hidden">
@@ -242,7 +285,14 @@ function App() {
                         onChange={(e) => setMessage({ text: e.target.value, sender: 'user' })}
                         className="flex-grow p-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500" 
                     />
-                    <button type="submit"  className="ml-2 p-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"> Send </button>     
+                    {!isProcessing ? <button type="submit"  className="ml-2 p-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"> Send </button> : <img src={recording} width="40px" alt='recording'/>}
+                    <button
+                      type="button"
+                      onClick={toggleListening}
+                      className={`ml-2 p-2 ${isListening ? 'bg-red-600' : 'bg-gray-600'} text-white rounded-lg hover:bg-gray-700`}
+                    >
+                    {isListening ? 'Stop' : '🎤'}
+                  </button>     
                 </form>
             ) : 
             (
