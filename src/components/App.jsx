@@ -10,6 +10,7 @@ function App() {
   // User info
   const [userInfo, setUserInfo] = useState({ name: '', age: '', gender: '' });
   const [symptoms, setSymptoms] = useState([]);
+  const [disease,setDisease] = useState('');
   const [step, setStep] = useState(1);
 
   //console.log(userInfo);
@@ -49,7 +50,7 @@ function App() {
         }, 1000);
   }
 
-    function handleSubmit(event) 
+    async function handleSubmit(event) 
     {
         event.preventDefault();
 
@@ -77,7 +78,10 @@ function App() {
                 { text: 'What is your gender?', sender: 'bot' },
             ]);
             setStep(3);
+
+            
         } 
+        
         else if (step === 3) 
         {
             setUserInfo((prevInfo) => ({ ...prevInfo, gender: message.text }));
@@ -86,17 +90,67 @@ function App() {
                 { text: 'Enter five symptoms, separated by commas.', sender: 'bot' },
             ]);
             setStep(4);
+            
         } 
         else if (step === 4) 
         {
-            const symptomsArray = message.text.split(',').map(symptom => symptom.trim());
+           console.log(message.text);
+           const strobj = {
+            "symtext":message.text
+           }
+            // const symptomsArray = message.text.split(',').map(symptom => symptom.trim());
+            const sent = await fetch('http://localhost:5000/nlp',{
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify(strobj),
+            })
+            const symptomsArray = await sent.json();
+
             if (symptomsArray.length === 5) {
                 setSymptoms(symptomsArray);
                 setMessages((prevMessages) => [
                 ...prevMessages,
-                { text: 'Thank you! Your information has been saved.', sender: 'bot' },
+                { text: `Thank You`, sender: 'bot' },
                 ]);
-                setStep(5); // End of sequence, we can data here to backend as symptoms array
+                 // End of sequence, we can data here to backend as symptoms array
+
+            console.log({userInfo,symptomsArray});
+             
+      
+            
+              try {
+                const response = await fetch('http://localhost:5000/api/patients', {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json',
+                  },
+                  body: JSON.stringify({userInfo,symptomsArray}),
+                });
+                
+          
+                const data = await response.json();
+                console.log("12354");
+                console.log(data);
+                setDisease((data) => data);
+                console.log(disease);
+                setMessages((prevMessages) => [
+                  ...prevMessages,
+                  { text: data, sender: 'bot' },
+                  ]);
+
+                  setStep(5);
+
+                if (response.ok) {
+                  console.log('Data sent successfully:', data);
+                } else {
+                  console.error('Failed to send data:', data.error);
+                }
+              } catch (error) {
+                console.error('Error sending data:', error);
+              }
+            
             } 
             else
             {
@@ -104,6 +158,7 @@ function App() {
                 ...prevMessages,
                 { text: 'Please enter exactly five symptoms, separated by commas.', sender: 'bot' },
                 ]);
+
             }
         }
         else
@@ -115,9 +170,13 @@ function App() {
             setStep(4);
         }
 
+        console.log(message);
         // Clear input and stop loading
         setMessage({ text: '', sender: '' });
+
+        
     }
+    
 
   return (
     <div className="relative flex items-center justify-center min-h-screen p-4 bg-gradient-to-br from-teal-400 via-blue-400 to-purple-500 overflow-hidden">
