@@ -2,18 +2,26 @@ import React, { useState, useRef, useEffect } from 'react';
 import recording from "../assets/record.gif"
 
 function App() {
-    //messages info
+
+  //messages info
   const [message, setMessage] = useState({ text: '', sender: '' });
   const [messages, setMessages] = useState([]);
+
+  // Speech to text
   const [isListening, setIsListening] = useState(false);
+
+  // Hey button
   const [clickHey, setClickHey] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
 
   let recognition;
   const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+
   // User info
   const [userInfo, setUserInfo] = useState({ name: '', age: '', gender: '' });
   const [symptoms, setSymptoms] = useState([]);
+
+  // Disease info from model
   const [disease,setDisease] = useState('');
   const [step, setStep] = useState(1);
 
@@ -27,97 +35,94 @@ function App() {
     name: '',
     availableDates: []
   });
+  // avaliable slots are populated based on selected doctor
   const [availableSlots, setAvailableSlots] = useState([]);
 
-  const messagesEndRef = useRef(null);
-
   // Auto-scroll to the latest message
+  const messagesEndRef = useRef(null);
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, clickHey,step,userInfo,symptoms]);
 
+
   function onHeyClick() 
   {
-        setClickHey(true);
+      setClickHey(true);
 
-        // Add user's "Hey" message to the messages array
-        setMessages((prevMessages) => [
-        ...prevMessages,
-        { text: 'Hey', sender: 'user' },
-        ]);
+    // Add user's "Hey" message to the messages array
+      setMessages((prevMessages) => [
+      ...prevMessages,
+      { text: 'Hey', sender: 'user' },
+      ]);
 
-        // first bot responses after "Hey" is clicked
-        setTimeout(() => {
-        setMessages((prevMessages) => [
-            ...prevMessages,
-            { text: 'Hello user', sender: 'bot' },
-        ]);
+    // first bot responses after "Hey" is clicked
+      setTimeout(() => {
+      setMessages((prevMessages) => [
+          ...prevMessages,
+          { text: 'Hello user', sender: 'bot' },
+      ]);
 
-        // Second bot message after a delay
-        setTimeout(() => {
-            setMessages((prevMessages) => [
-            ...prevMessages,
-            { text: 'What is your name?', sender: 'bot' },
-            ]);
-            }, 1000);
-        }, 1000);
+    // Second bot message after a delay
+      setTimeout(() => {
+          setMessages((prevMessages) => [
+          ...prevMessages,
+          { text: 'What is your name?', sender: 'bot' },
+          ]);
+          }, 1000);
+      }, 1000);
   }
 
-    const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
-    async function handleSubmit(event) 
-    {
-        event.preventDefault();
+  const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+  async function handleSubmit(event) 
+  {
+      event.preventDefault();
 
-        if (!message.text.trim()) return;
+      if (!message.text.trim()) return;
 
-        // Add user message to messages array
-        setMessages([...messages, { text: message.text, sender: 'user' }]);
+    // Add user message to messages array
+      setMessages([...messages, { text: message.text, sender: 'user' }]);
 
-        // Process user input based on the current step
-        if (step === 1)
-        {
-            await sleep(2000);
-            setUserInfo((prevInfo) => ({ ...prevInfo, name: message.text }));
+    // Process user input based on the current step
+      if (step === 1)
+      {
+          //await sleep(2000);
+          setUserInfo((prevInfo) => ({ ...prevInfo, name: message.text }));
 
-            setMessages((prevMessages) => [
-                ...prevMessages,
-                { text:'Hello '+userInfo.name+ ', What is your age?', sender: 'bot' },
-            ]);
-            setStep(2);
-        } 
-        else if (step === 2) 
-        {
-            await sleep(2000);
-            setUserInfo((prevInfo) => ({ ...prevInfo, age: message.text }));
-            setMessages((prevMessages) => [
-                ...prevMessages,
-                { text: 'What is your gender?', sender: 'bot' },
-            ]);
+          setMessages((prevMessages) => [
+              ...prevMessages,
+              { text:'Hello '+userInfo.name+ ', What is your age?', sender: 'bot' },
+          ]);
+          setStep(2);
+      } 
+      else if (step === 2) 
+      {
+          //await sleep(2000);
+          setUserInfo((prevInfo) => ({ ...prevInfo, age: message.text }));
+          setMessages((prevMessages) => [
+              ...prevMessages,
+              { text: 'What is your gender?', sender: 'bot' },
+          ]);
 
-            //call to backend to send userinfo data
-            // in response mongodb id wii be sent to frontend
-            // store id in localstorage
-            setStep(3);
-
-            
-        } 
-        
-        else if (step === 3) 
-        {
-            await sleep(2000);
-            setUserInfo((prevInfo) => ({ ...prevInfo, gender: message.text }));
-            setMessages((prevMessages) => [
-                ...prevMessages,
-                { text: 'What problems are you facing?', sender: 'bot' },
-            ]);
-            setStep(4);
-            
-        } 
-        else if (step === 4) 
-        {
-            await sleep(2000);
+          //call to backend to send userinfo data
+          // in response mongodb id wii be sent to frontend
+          // store id in localstorage
+          setStep(3);   
+      }
+      else if (step === 3) 
+      {
+          //await sleep(2000);
+          setUserInfo((prevInfo) => ({ ...prevInfo, gender: message.text }));
+          setMessages((prevMessages) => [
+              ...prevMessages,
+              { text: 'What problems are you facing?', sender: 'bot' },
+          ]);
+          setStep(4); 
+      } 
+      else if (step === 4) 
+      {
+          //await sleep(2000);
             //const symptomsArray = message.text.split(',').map(symptom => symptom.trim());
-           console.log(message.text);
+            console.log(message.text);
            const strobj = {
             "symtext":message.text
            }
@@ -131,19 +136,17 @@ function App() {
             })
             const symptomsArray = await sent.json();
 
-            if (symptomsArray.length === 5) {
-                setSymptoms(symptomsArray);
-                setMessages((prevMessages) => [
-                ...prevMessages,
+            if (symptomsArray.length === 5) 
+            {
+              setSymptoms(symptomsArray);
+              setMessages((prevMessages) => [
+              ...prevMessages,
+              { text: `Thank You`, sender: 'bot' },
+              ]);
+              // End of sequence, we can data here to backend as symptoms array
 
-                { text: `Thank You`, sender: 'bot' },
-                ]);
-                 // End of sequence, we can data here to backend as symptoms array
-
-            console.log({userInfo,symptomsArray});
+              console.log({userInfo,symptomsArray});
              
-      
-            
               try {
                 const response = await fetch('http://localhost:5000/api/patients', {
                   method: 'POST',
@@ -155,16 +158,18 @@ function App() {
                 
           
                 const data = await response.json();
+
                 console.log("12354");
-                console.log(data);
-                setDisease((data) => data);
+                console.log(data.predictedDisease);
+                localStorage.setItem('id',data.id);
+                setDisease(data.predictedDisease);
                 console.log(disease);
                 setMessages((prevMessages) => [
                   ...prevMessages,
-                  { text: data, sender: 'bot' },
+                  { text: data.predictedDisease, sender: 'bot' },
                   ]);
 
-                  setStep(5);
+                setStep(5);
 
                 if (response.ok) {
                   console.log('Data sent successfully:', data);
@@ -178,10 +183,10 @@ function App() {
             } 
             else
             {
-                setMessages((prevMessages) => [
-                ...prevMessages,
-                { text: 'Please enter exactly five symptoms, separated by commas.', sender: 'bot' },
-                ]);
+              setMessages((prevMessages) => [
+              ...prevMessages,
+              { text: 'Please enter exactly five symptoms, separated by commas.', sender: 'bot' },
+              ]);
             }
         }
         else if (step === 6 && selectedDoctor) 
@@ -191,7 +196,7 @@ function App() {
                 { text: `Your slot with Dr. ${selectedDoctor.name} has been booked.`, sender: 'bot' },
                 { text: 'Thank you for booking the slot.', sender: 'bot' }
             ]);
-            setStep(7);
+            setStep(6.5);
         }
         else
         {
@@ -206,23 +211,27 @@ function App() {
         setMessage({ text: '', sender: '' });
       }        
       
-      
-
-        
-
-        
-    
-    
-
-    function handleAppointmentResponse(response) {
+  
+    async function handleAppointmentResponse(response) {
         if (response === 'yes') {
-            // here we can fetch doctors from backend and set in doctors data
-        //   fetchDoctors();
-          const doctorsData = [
-            { id: 1, name: 'Dr. Smith', availableDates: ['2024-11-12', '2024-11-13'] },
-            { id: 2, name: 'Dr. Johnson', availableDates: ['2024-11-14', '2024-11-15'] },
-          ];
-          setDoctors(doctorsData);
+          // here we can fetch doctors from backend and set in doctors data
+          //   fetchDoctors();
+
+          const sent= await fetch('http://localhost:5000/api/doctors', {
+            method: 'GET',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+          });
+          const doctorsData = await sent.json();
+          setDoctors(doctorsData); 
+
+          /*  //same above replica with static data
+            const doctorsData = [
+              { id: 1, name: 'Dr. Smith', availableDates: ['2024-11-12', '2024-11-13'] },
+              { id: 2, name: 'Dr. Johnson', availableDates: ['2024-11-14', '2024-11-15'] },
+            ];
+          */
           setMessages((prevMessages) => [
             ...prevMessages,
             { text: 'Here are the available doctors:', sender: 'bot' },
@@ -255,8 +264,12 @@ function App() {
         setSelectedDoctor(doctor);
     
         // here go through all the slots(which is response from backend )and create json {slots.date , slots.time} and add in slots
-        const slots = doctor.availableDates.map((date) => `${date} 10:00 AM`);
 
+        const slots = doctor.slots.map((slot) => ({
+          date: slot.date,
+          time: slot.time
+        }));
+        
         setAvailableSlots(slots);
         setMessages((prevMessages) => [
           ...prevMessages,
@@ -265,17 +278,27 @@ function App() {
         setStep(6.5);
       }
 
-      function handleSlotSelection(slot) {
+      async function handleSlotSelection(slot) {
         setMessages((prevMessages) => [
           ...prevMessages,
-          { text: `You selected ${slot} for Dr. ${selectedDoctor.name}. Slot is booked.`, sender: 'bot' },
+          { text: `You selected ${slot.date} and  ${slot.time} for Dr. ${selectedDoctor.name}. Slot is booked.`, sender: 'bot' },
         ]);
         //call to backend to block selected slot in backend
         // data to be sent to backend is selectedDoctor.id, slot.time, and id(id which is stored in localstorage at line 91)
+
+        const sent= await fetch('http://localhost:5000/bookslot', {
+          method: 'post',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({doctorid:selectedDoctor.id,time:slot,patientid:localStorage.getItem('id')}),
+        });
+
         setAvailableSlots([]);
         setStep(7);
       }
-    //////////////////////////////////////speech to text
+
+   //speech to text
     if (SpeechRecognition) {
       recognition = new SpeechRecognition();
       recognition.continuous = false;
